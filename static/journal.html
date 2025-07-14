@@ -1,8 +1,9 @@
 <html>
     <head>
-        <script src="static/runner.js"></script>
+        <script src="runner.js"></script>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
         <link rel="stylesheet" href="static/style.css">
+        <link rel="stylesheet" href="style.css">
         <link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     </head>
@@ -40,11 +41,9 @@
         <div id="Journal" class="tab">
             <h2>Journal</h2>
             <div id="journal-container">
-                {% for record in records %}
-                {%- set date = record['stat-date'] -%}
                 <div class="journal-entry">
                     <div class="journal-head">
-                        {{ date }}
+                        00/00/00
                     </div>
                     <div class="journal-content">
                         <table>
@@ -52,31 +51,20 @@
                                 <col style="width: 70%;">
                                 <col style="width: 30%;">
                             </colgroup>
-                    {% for key,value in record.items() %}
-                    {% if key == 'stat-date' %}
-                            {# Pass #}
-
-                    {% elif 'range' in key %}
-                    {%- set title = key.split('-')[0] -%}
                             <tr>
-                                <td><b>{{ title | capitalize }}</b></td>
-                                <td>{{ value }}</td>
+                                <td><b>Depression</b></td>
+                                <td>10</td>
                             </tr>
-                    {% else %}
-                    {%- set title = key.split('-')[0] -%}
-                            <tr onclick="reveal('{{ title }}-deets-{{ date }}')">
-                                <td><b>{{ title | capitalize }}</b></td>
+                            <tr onclick="reveal('nutrition-deets-00/00/00')">
+                                <td><b>Nutrition</b></td>
                                 <td>&#9989;</td>
                             </tr>
-                            <tr class="journal-deets" id="{{ title }}-deets-{{ date }}">
-                                <td colspan="2">{{ value }}</td>    
+                            <tr class="journal-deets" id="nutrition-deets-00/00/00">
+                                <td colspan="2">Extremely long and highly detailed text goes here regarding the nature of the above</td>    
                             </tr>
-                    {% endif %}
-                    {% endfor %}
                         </table>
                     </div>
                 </div>
-                {% endfor %}
             </div>
         </div>
 

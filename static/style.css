@@ -26,3 +26,53 @@
     max-width: 500px; 
     min-width: 100px
 }
+
+#journal-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-style: solid; 
+    border-color: grey; 
+}
+
+.journal-entry {
+    max-width: 500px; 
+    min-width: 360px; 
+    transition: transform 0.2s;
+    border-style: solid;
+    border-color: red; 
+    margin: 5px; 
+}
+
+.journal-head {
+    text-align: center;
+    width: 100%;
+    background-color: #4CAF50;
+    color: white;
+}
+
+.journal-content {
+    margin: 10px; 
+}
+
+.journal-content td:nth-child(2) {
+    text-align: right; 
+}
+
+.journal-content table {
+    width: 100%; 
+    border-collapse: collapse;
+}
+
+.journal-deets {
+    display: none;
+}
+
+.journal-deets td {
+    word-wrap: break-word; 
+    white-space: normal;
+    overflow-wrap: break-word; 
+    box-sizing: border-box;
+    background-color: #cfdfd0;
+    font-size: 13px; 
+}

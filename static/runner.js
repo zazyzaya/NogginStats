@@ -47,3 +47,28 @@ function submit() {
         console.error('Error:', error);
     });
 }
+
+function reveal(elm_id) {
+    let el = document.getElementById(elm_id)
+    
+    // TODO animate this 
+    if (el.style.display == '') {
+        el.style.display = 'table-row';
+    }
+    else {
+        el.style.display = ''
+    }
+}
+
+// Freeze width 
+function setChildWidths() {
+    document.querySelectorAll('.journal-entry').forEach(entry => {
+        const width = entry.offsetWidth;
+        entry.querySelectorAll('.journal-content').forEach(child => {
+            child.style.width = width + "px";
+        });
+    });
+}
+
+document.addEventListener("DOMContentLoaded", setChildWidths);
+// window.addEventListener("resize", setChildWidths);
