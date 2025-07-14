@@ -1,18 +1,40 @@
 <html>
     <head>
         <script src="static/runner.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
         <link rel="stylesheet" href="static/style.css">
         <link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     </head>
     <body>
         <div class="w3-bar w3-green" style="font-size: x-large; text-align: center;">NogginStats</div>
         <div class="w3-bar w3-black">
-            <button class="w3-bar-item w3-button tablink w3-green" onclick="openTab(event, 'Stats')">Stats</button>
+            <button class="w3-bar-item w3-button tablink w3-green" onclick="openTab(event, 'Submit')">Submit</button>
+            <button class="w3-bar-item w3-button tablink" onclick="openTab(event, 'Journal')">Journal</button>
             <button class="w3-bar-item w3-button tablink" onclick="openTab(event, 'Graphs')">Graphs</button>
             <button class="w3-bar-item w3-button tablink" onclick="openTab(event, 'Settings')">Settings</button>
         </div>
-        <div id="Stats" class="tab">
-            <h2>Stats</h2>
+        <div id="Submit" class="tab">
+            <div id="stats-box-container">
+                <div id="stats-box">
+                    <input id="stat-date" class="stat-input" type="date" value="{{ today }}">
+                    {% for title, id, has_comment in stats %}
+                    {% if has_comment %}
+                    <span class="title-check"><h4 style="display: inline;">{{ title }}</h4>
+                    <input id="{{ id }}-checked" type="checkbox" class="stat-bool stat-input">
+                    </span>
+                    <h5>Notes:</h5>
+                    <textarea id="{{ id }}-txt" class="stat-notes stat-input"></textarea>
+                    <br><br>
+                    {% else %}
+                    <h4>{{ title }}</h4>
+                    <label id="{{ id }}-label">5</label>&nbsp;&nbsp;&nbsp;<input id="{{ id }}-range" class="stat-range stat-input" type="range" min="1", max="10", step="1" value="5" oninput="document.getElementById('{{ id }}-label').innerHTML = this.value">
+                    <br><br>
+                    {% endif %}
+                    {% endfor %}
+                    <button id="stat-button" class="w3-button w3-green w3-round-large w3-block" onclick="submit()">Submit</button>
+                </div>
+            </div>
         </div>
 
         <div id="Graphs" class="tab" style="display:none">

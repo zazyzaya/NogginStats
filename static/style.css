@@ -1,3 +1,28 @@
 .tab {
     margin: 10px
 }
+
+#stats-box-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#stats-box {
+    max-width: 500px; 
+    min-width: 360px; 
+    transition: transform 0.2s;
+}
+
+#stats-box textarea {
+    width: 100%;
+    height: 100px; 
+    max-width: 500px; 
+}
+
+#stats-box input[type=range] {
+    width: 90%;
+    margin: auto; 
+    max-width: 500px; 
+    min-width: 100px
+}
