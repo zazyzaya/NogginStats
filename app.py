@@ -129,11 +129,12 @@ def build_catagorical(orig_df):
 
     fig.update_layout(
         xaxis_title='Date',
-        yaxis_title='Metric',
         xaxis=dict(tickmode='array', tickvals=heatmap_df_T.columns),
         coloraxis_showscale=False,
         width=None,
-        height=None
+        height=None,
+        margin_pad=10,
+        plot_bgcolor='rgba(0, 0, 0, 0)'
     )
 
     return fig 

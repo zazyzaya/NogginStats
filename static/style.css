@@ -27,12 +27,17 @@
     min-width: 100px
 }
 
+#stat-date {
+    margin: auto; 
+    display: block;
+    width: 100%; 
+    text-align: center;
+}
+
 #journal-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    border-style: solid; 
-    border-color: grey; 
     flex-direction: column; 
 }
 
