@@ -11,6 +11,14 @@ function openTab(evt, tabName) {
     tablinks[i].className = tablinks[i].className.replace(" w3-green", "");
   }
   evt.currentTarget.className += " w3-green";
+  setChildWidths();
+
+  setTimeout(() => {
+        const plots = document.querySelectorAll(".js-plotly-plot");
+        plots.forEach(p => {
+            Plotly.Plots.resize(p);
+        });
+    }, 50); // delay allows browser to paint the new layout
 }
 
 function submit() {
@@ -71,4 +79,3 @@ function setChildWidths() {
 }
 
 document.addEventListener("DOMContentLoaded", setChildWidths);
-// window.addEventListener("resize", setChildWidths);

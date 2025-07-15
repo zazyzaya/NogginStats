@@ -14,7 +14,7 @@
             <button class="w3-bar-item w3-button tablink" onclick="openTab(event, 'Graphs')">Graphs</button>
             <button class="w3-bar-item w3-button tablink" onclick="openTab(event, 'Settings')">Settings</button>
         </div>
-        <div id="Submit" class="tab" style="display: none">
+        <div id="Submit" class="tab">
             <div id="stats-box-container">
                 <div id="stats-box">
                     <input id="stat-date" class="stat-input" type="date" value="{{ today }}">
@@ -37,7 +37,7 @@
             </div>
         </div>
 
-        <div id="Journal" class="tab">
+        <div id="Journal" class="tab" style="display: none">
             <h2>Journal</h2>
             <div id="journal-container">
                 {% for record in records %}
@@ -52,27 +52,36 @@
                                 <col style="width: 70%;">
                                 <col style="width: 30%;">
                             </colgroup>
-                    {% for key,value in record.items() %}
-                    {% if key == 'stat-date' %}
+                    {%- for key,value in record.items() -%}
+                    {%- if key == 'stat-date' -%}
                             {# Pass #}
 
-                    {% elif 'range' in key %}
+                    {%- elif 'range' in key -%}
                     {%- set title = key.split('-')[0] -%}
                             <tr>
                                 <td><b>{{ title | capitalize }}</b></td>
                                 <td>{{ value }}</td>
                             </tr>
-                    {% else %}
-                    {%- set title = key.split('-')[0] -%}
+                    {%- elif 'checked' in key -%}
+                        {%- set title = key.split('-')[0] -%}
+                        {%- set extra_key = title + '-txt' -%}
+                        {%- set extra_value = record[extra_key] -%}
+                        
+                        {% if value %}
+                            {%- set emoji = '&#9989;' -%}
+                        {% else %}
+                            {%- set emoji = '&#10060;' -%}
+                        {% endif %}
+
                             <tr onclick="reveal('{{ title }}-deets-{{ date }}')">
                                 <td><b>{{ title | capitalize }}</b></td>
-                                <td>&#9989;</td>
+                                <td>{{ emoji | safe }}</td>
                             </tr>
                             <tr class="journal-deets" id="{{ title }}-deets-{{ date }}">
-                                <td colspan="2">{{ value }}</td>    
+                                <td colspan="2">{{ extra_value }}</td>    
                             </tr>
-                    {% endif %}
-                    {% endfor %}
+                    {%- endif -%}
+                    {%- endfor -%}
                         </table>
                     </div>
                 </div>
@@ -80,8 +89,15 @@
             </div>
         </div>
 
-        <div id="Graphs" class="tab" style="display:none">
-            <h2>Graphs</h2>
+        <div id="Graphs" class="tab" style="display: none">
+            <div id="graph-container">
+                <div id="range-chart" class="graph">
+                    {{ range_fig | safe }}
+                </div>
+                <div id="cat-chart" class="graph">
+                    {{ cat_fig | safe }}
+                </div>
+            </div>
         </div>
 
         <div id="Settings" class="tab" style="display:none">

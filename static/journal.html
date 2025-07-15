@@ -15,56 +15,144 @@
             <button class="w3-bar-item w3-button tablink" onclick="openTab(event, 'Graphs')">Graphs</button>
             <button class="w3-bar-item w3-button tablink" onclick="openTab(event, 'Settings')">Settings</button>
         </div>
-        <div id="Submit" class="tab" style="display: none">
-            <div id="stats-box-container">
-                <div id="stats-box">
-                    <input id="stat-date" class="stat-input" type="date" value="{{ today }}">
-                    {% for title, id, has_comment in stats %}
-                    {% if has_comment %}
-                    <span class="title-check"><h4 style="display: inline;">{{ title }}</h4>
-                    <input id="{{ id }}-checked" type="checkbox" class="stat-bool stat-input">
-                    </span>
-                    <h5>Notes:</h5>
-                    <textarea id="{{ id }}-txt" class="stat-notes stat-input"></textarea>
-                    <br><br>
-                    {% else %}
-                    <h4>{{ title }}</h4>
-                    <label id="{{ id }}-label">5</label>&nbsp;&nbsp;&nbsp;<input id="{{ id }}-range" class="stat-range stat-input" type="range" min="1", max="10", step="1" value="5" oninput="document.getElementById('{{ id }}-label').innerHTML = this.value">
-                    <br><br>
-                    {% endif %}
-                    {% endfor %}
-                    <button id="stat-button" class="w3-button w3-green w3-round-large w3-block" onclick="submit()">Submit</button>
-                </div>
-            </div>
-        </div>
+    
 
         <div id="Journal" class="tab">
             <h2>Journal</h2>
             <div id="journal-container">
                 <div class="journal-entry">
                     <div class="journal-head">
-                        00/00/00
+                        2025-07-24
                     </div>
                     <div class="journal-content">
                         <table>
                             <colgroup>
                                 <col style="width: 70%;">
                                 <col style="width: 30%;">
-                            </colgroup>
-                            <tr>
+                            </colgroup><tr>
                                 <td><b>Depression</b></td>
-                                <td>10</td>
+                                <td>4</td>
+                            </tr><tr>
+                                <td><b>Anxiety</b></td>
+                                <td>6</td>
                             </tr>
-                            <tr onclick="reveal('nutrition-deets-00/00/00')">
+
+                            <tr onclick="reveal('movement-deets-2025-07-24')">
+                                <td><b>Movement</b></td>
+                                <td>&#10060;</td>
+                            </tr>
+                            <tr class="journal-deets" id="movement-deets-2025-07-24">
+                                <td colspan="2">Test text for movement</td>    
+                            </tr>
+
+                            <tr onclick="reveal('nutrition-deets-2025-07-24')">
                                 <td><b>Nutrition</b></td>
+                                <td>&#10060;</td>
+                            </tr>
+                            <tr class="journal-deets" id="nutrition-deets-2025-07-24">
+                                <td colspan="2">Test text for nutrition</td>    
+                            </tr>
+
+                            <tr onclick="reveal('rest-deets-2025-07-24')">
+                                <td><b>Rest</b></td>
+                                <td>&#10060;</td>
+                            </tr>
+                            <tr class="journal-deets" id="rest-deets-2025-07-24">
+                                <td colspan="2">Test text for rest</td>    
+                            </tr>
+
+                            <tr onclick="reveal('light-deets-2025-07-24')">
+                                <td><b>Light</b></td>
                                 <td>&#9989;</td>
                             </tr>
-                            <tr class="journal-deets" id="nutrition-deets-00/00/00">
-                                <td colspan="2">Extremely long and highly detailed text goes here regarding the nature of the above</td>    
+                            <tr class="journal-deets" id="light-deets-2025-07-24">
+                                <td colspan="2">Test text for light</td>    
                             </tr>
-                        </table>
+
+                            <tr onclick="reveal('social-deets-2025-07-24')">
+                                <td><b>Social</b></td>
+                                <td>&#10060;</td>
+                            </tr>
+                            <tr class="journal-deets" id="social-deets-2025-07-24">
+                                <td colspan="2">Test text for social</td>    
+                            </tr>
+
+                            <tr onclick="reveal('stress-deets-2025-07-24')">
+                                <td><b>Stress</b></td>
+                                <td>&#10060;</td>
+                            </tr>
+                            <tr class="journal-deets" id="stress-deets-2025-07-24">
+                                <td colspan="2">Test text for stress</td>    
+                            </tr></table>
                     </div>
                 </div>
+                   <div class="journal-entry">
+                    <div class="journal-head">
+                        2025-07-15
+                    </div>
+                    <div class="journal-content">
+                        <table>
+                            <colgroup>
+                                <col style="width: 70%;">
+                                <col style="width: 30%;">
+                            </colgroup><tr>
+                                <td><b>Depression</b></td>
+                                <td>1</td>
+                            </tr><tr>
+                                <td><b>Anxiety</b></td>
+                                <td>3</td>
+                            </tr>
+
+                            <tr onclick="reveal('movement-deets-2025-07-15')">
+                                <td><b>Movement</b></td>
+                                <td>&#10060;</td>
+                            </tr>
+                            <tr class="journal-deets" id="movement-deets-2025-07-15">
+                                <td colspan="2">Test text for movement</td>    
+                            </tr>
+
+                            <tr onclick="reveal('nutrition-deets-2025-07-15')">
+                                <td><b>Nutrition</b></td>
+                                <td>&#10060;</td>
+                            </tr>
+                            <tr class="journal-deets" id="nutrition-deets-2025-07-15">
+                                <td colspan="2">Test text for nutrition</td>    
+                            </tr>
+
+                            <tr onclick="reveal('rest-deets-2025-07-15')">
+                                <td><b>Rest</b></td>
+                                <td>&#9989;</td>
+                            </tr>
+                            <tr class="journal-deets" id="rest-deets-2025-07-15">
+                                <td colspan="2">Test text for rest</td>    
+                            </tr>
+
+                            <tr onclick="reveal('light-deets-2025-07-15')">
+                                <td><b>Light</b></td>
+                                <td>&#9989;</td>
+                            </tr>
+                            <tr class="journal-deets" id="light-deets-2025-07-15">
+                                <td colspan="2">Test text for light</td>    
+                            </tr>
+
+                            <tr onclick="reveal('social-deets-2025-07-15')">
+                                <td><b>Social</b></td>
+                                <td>&#9989;</td>
+                            </tr>
+                            <tr class="journal-deets" id="social-deets-2025-07-15">
+                                <td colspan="2">Test text for social</td>    
+                            </tr>
+
+                            <tr onclick="reveal('stress-deets-2025-07-15')">
+                                <td><b>Stress</b></td>
+                                <td>&#10060;</td>
+                            </tr>
+                            <tr class="journal-deets" id="stress-deets-2025-07-15">
+                                <td colspan="2">Test text for stress</td>    
+                            </tr></table>
+                    </div>
+                </div>
+                
             </div>
         </div>
 

@@ -33,6 +33,7 @@
     align-items: center;
     border-style: solid; 
     border-color: grey; 
+    flex-direction: column; 
 }
 
 .journal-entry {
@@ -40,8 +41,9 @@
     min-width: 360px; 
     transition: transform 0.2s;
     border-style: solid;
-    border-color: red; 
+    border-color: #4CAF50;
     margin: 5px; 
+    display: block;
 }
 
 .journal-head {
@@ -53,6 +55,7 @@
 
 .journal-content {
     margin: 10px; 
+    width: 100%;
 }
 
 .journal-content td:nth-child(2) {
@@ -61,7 +64,6 @@
 
 .journal-content table {
     width: 100%; 
-    border-collapse: collapse;
 }
 
 .journal-deets {
@@ -75,4 +77,24 @@
     box-sizing: border-box;
     background-color: #cfdfd0;
     font-size: 13px; 
+    width: 100%; 
+}
+
+#graph-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.graph {
+    width: 100%;
+    max-width: 800px;
+    margin-bottom: 20px;
+}
+
+.js-plotly-plot {
+    width: 100% !important;
+    height: auto !important;
+    max-width: 100% !important;
 }
