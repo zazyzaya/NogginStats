@@ -1,3 +1,4 @@
+import cryptography
 import datetime as dt 
 import os 
 import json 
@@ -7,17 +8,38 @@ import dropbox
 import dash
 from dash import html
 from dash import dcc
-from flask import Flask, render_template, session, request
+from flask import Flask, render_template, session, request, url_for, redirect
 import plotly.express as px
 import pandas as pd 
+import cryptpandas as crp
 
 from secret import secret
+
+# Annoyingly, python hashes are inconsistant
+import hashlib
+from operator import xor
+from struct import unpack
+
+def stable_hash(a_string):
+    sha256 = hashlib.sha256()
+    sha256.update(bytes(a_string, "UTF-8"))
+    digest = sha256.digest()
+    h = 0
+    #
+    for index in range(0, len(digest) >> 3):
+        index8 = index << 3
+        bytes8 = digest[index8 : index8 + 8]
+        i = unpack('q', bytes8)[0]
+        h = xor(h, i)
+    #
+    return h
 
 # TODO get from env variable 
 dbx = dropbox.Dropbox(secret['db-token'])
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET', 'dev_server')
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 STATS = [
     ("Overall feeling \u2014 Depression", 'depression', False),
@@ -30,10 +52,19 @@ STATS = [
     ("Stress Management", 'stress', True)
 ]
 
+col_order = ['stat-date']
+for _,k,b in STATS: 
+    if b: 
+        col_order.append(f'{k}-checked')
+        col_order.append(f'{k}-txt')
+    else: 
+        col_order.append(f'{k}-range')
+
+'''
 test_data = []
 for i in range(10): 
     datum = dict()
-    d = dt.datetime.today() - dt.timedelta(days=(-i))
+    d = dt.datetime.today() + dt.timedelta(days=(-(i+1)))
     datum['stat-date'] = d.strftime('%Y-%m-%d')
     for _,k,b in STATS: 
         if b: 
@@ -47,13 +78,41 @@ test_df = pd.DataFrame(test_data)
 test_df = test_df.sort_values(by='stat-date', ascending=False)
 records = test_df.to_dict(orient='records')
 
+TEST_USR = 'admin'
+TEST_PWD = 'admin'
+pwd = str(stable_hash(TEST_USR + TEST_PWD))
+print('password:', pwd)
+crp.to_encrypted(test_df, pwd, f'{TEST_USR}.crypt')
+'''
+
 today = lambda : dt.datetime.today().strftime('%Y-%m-%d')
+
+def preload_journal(): 
+    preload = dict()
+    
+    df = pd.DataFrame(session['df'])
+    todays_log = (df['stat-date'] == today()).to_numpy().nonzero()[0]
+
+    if todays_log.shape[0] == 0: 
+        for _,k,b in STATS: 
+            if b: 
+                preload[f'{k}-checked'] = False
+                preload[f'{k}-txt'] = ''
+            else: 
+                preload[f'{k}-range'] = 5
+    else: 
+        preload = df.iloc[todays_log.item()].to_dict()
+        print(preload)
+
+    return preload
+
 
 def get_index_kwargs(): 
     return {
         'stats': STATS, 
-        'records': records, 
+        'records': session['df'], 
         'today': today(),
+        'journal_content': preload_journal(),
         'range_fig': build_range_fig(pd.DataFrame(session['df'])).to_html(
             full_html=False,
             include_plotlyjs='cdn',
@@ -70,12 +129,33 @@ def get_index_kwargs():
         ),
     }
 
+
 @app.route('/submit', methods=['POST'])
 def submit(): 
-    print("Posted")
     print(json.dumps(request.json, indent=1))
+    
+    df = pd.DataFrame(session['df'], columns=col_order)
+    row = request.json
+    todays_log = (df['stat-date'] == row['stat-date']).to_numpy().nonzero()[0]
 
-    return render_template('index.html', **get_index_kwargs())
+    # Overwrite existing
+    if todays_log.shape[0]: 
+        idx = todays_log.item()
+        df.loc[idx,row.keys()] = row.values()
+
+    # Create new
+    else: 
+        df = pd.concat([pd.DataFrame([row]), df])
+
+    # Write local
+    crp.to_encrypted(df, session['usr_token'], f'{session["username"]}.crypt')
+
+    # Update in-memory df 
+    session['df'] = df.to_dict(orient='records')
+
+    # TODO write to cloud
+
+    return redirect(url_for('index'))
 
 
 @app.route('/authorized', methods=['POST'])
@@ -84,22 +164,66 @@ def login():
     pwd = request.form['password']
     
     session['username'] = usr 
-    session['usr_token'] = hash(usr + pwd)
-    print(session['usr_token'])
+    session['usr_token'] = str(stable_hash(usr + pwd))
 
-    # TODO include logic to validate login 
-    return render_template('index.html', **get_index_kwargs())
+    try: 
+        print("Correct pwd")
+        df = crp.read_encrypted(f'{session["username"]}.crypt', session['usr_token'])
+    except cryptography.fernet.InvalidToken: 
+        print("Wrong pwd")
+        return render_template('login.html', failed_reason='Incorrect old password')
+
+    session['df'] = df.to_dict(orient='records')
+
+    return redirect(url_for('index'))
+
+
+@app.route('/reset_pwd_submit', methods=['POST'])
+def reset_pwd_submit(): 
+    old_pwd = request.json['old_pwd']
+    new_pwd = request.json['password']
+
+    if new_pwd != request.json['password2']: 
+        return "Passwords don't match"
+
+    pwd = str(stable_hash(session['username'] + old_pwd))
+    
+    try: 
+        crp.read_encrypted(f'{session["username"]}.crypt', pwd)
+    except cryptography.fernet.InvalidToken: 
+        return 'Incorrect old password'
+
+    pwd = str(stable_hash(session['username'] + new_pwd))
+    session['usr_token'] = pwd 
+    df = pd.DataFrame(session['df'])
+    crp.to_encrypted(df, pwd, f'{session["username"]}.crypt')
+    # TODO Reupload to cloud 
+
+    return redirect(url_for('index'))
+
+
+@app.route('/pwd_reset')
+def pwd_reset_screen(): 
+    return render_template('pwd_reset.html')
 
 
 @app.route('/')
 def index():
-    session.clear()
+    #session.clear()
+    #session['df'] = records
+    #return render_template('index.html', **get_index_kwargs())
+    print("routed to index")
     if session.get('usr_token'):
-        session['df'] = records
+        try: 
+            df = crp.read_encrypted(f'{session["username"]}.crypt', session['usr_token'])
+        except cryptography.fernet.InvalidToken: 
+            return render_template('login.html', failed_reason='Incorrect old password')
+
+        session['df'] = df.to_dict(orient='records')
         return render_template('index.html', **get_index_kwargs())
     else: 
-        session['df'] = records
         return render_template('login.html')
+
 
 def build_catagorical(orig_df): 
     cols = [c for c in orig_df.columns if 'checked' in c] 
@@ -139,6 +263,7 @@ def build_catagorical(orig_df):
 
     return fig 
 
+
 def build_range_fig(df): 
     range_fig = px.line(
         df, x='stat-date', y=['depression-range', 'anxiety-range'], 
@@ -174,4 +299,6 @@ def build_range_fig(df):
 
 dash_app = dash.Dash(server=app, url_base_pathname="/dash/")
 dash_app.layout = html.Div([])
-app.run(debug=True)
+
+if __name__ == '__main__': 
+    app.run(debug=True)

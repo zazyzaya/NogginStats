@@ -6,29 +6,34 @@
         <link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     </head>
-    <body>
+    <body onload="revertToTab()">
         <div class="w3-bar w3-green" style="font-size: x-large; text-align: center;">NogginStats</div>
         <div class="w3-bar w3-black">
-            <button class="w3-bar-item w3-button tablink w3-green" onclick="openTab(event, 'Submit')">Submit</button>
-            <button class="w3-bar-item w3-button tablink" onclick="openTab(event, 'Journal')">Journal</button>
-            <button class="w3-bar-item w3-button tablink" onclick="openTab(event, 'Graphs')">Graphs</button>
-            <button class="w3-bar-item w3-button tablink" onclick="openTab(event, 'Settings')">Settings</button>
+            <button id="Submit-tab" class="w3-bar-item w3-button tablink" onclick="openTab(event, 'Submit')">Submit</button>
+            <button id="Journal-tab" class="w3-bar-item w3-button tablink" onclick="openTab(event, 'Journal')">Journal</button>
+            <button id="Graphs-tab" class="w3-bar-item w3-button tablink" onclick="openTab(event, 'Graphs')">Graphs</button>
+            <button id="Settings-tab" class="w3-bar-item w3-button tablink w3-green" onclick="openTab(event, 'Settings')">Settings</button>
         </div>
         <div id="Submit" class="tab">
             <div id="stats-box-container">
                 <div id="stats-box">
                     <input id="stat-date" class="stat-input" type="date" value="{{ today }}">
                     {% for title, id, has_comment in stats %}
-                    {% if has_comment %}
+                    {%- if has_comment -%}
+                    {%- if journal_content[id+'-checked'] -%}
+                        {%- set is_checked='checked' -%}
+                    {%- else -%}
+                        {%- set is_checked='' -%}
+                    {%- endif -%}
                     <span class="title-check"><h4 style="display: inline;">{{ title }}</h4>
-                    <input id="{{ id }}-checked" type="checkbox" class="stat-bool stat-input">
+                    <input id="{{ id }}-checked" type="checkbox" class="stat-bool stat-input" {{is_checked}}>
                     </span>
                     <h5>Notes:</h5>
-                    <textarea id="{{ id }}-txt" class="stat-notes stat-input"></textarea>
+                    <textarea id="{{ id }}-txt" class="stat-notes stat-input">{{ journal_content[id+'-txt'] }}</textarea>
                     <br><br>
                     {% else %}
                     <h4>{{ title }}</h4>
-                    <label id="{{ id }}-label">5</label>&nbsp;&nbsp;&nbsp;<input id="{{ id }}-range" class="stat-range stat-input" type="range" min="1", max="10", step="1" value="5" oninput="document.getElementById('{{ id }}-label').innerHTML = this.value">
+                    <label id="{{ id }}-label">{{ journal_content[id + '-range'] }}</label>&nbsp;&nbsp;&nbsp;<input id="{{ id }}-range" class="stat-range stat-input" type="range" min="1", max="10", step="1" value="{{ journal_content[id + '-range'] }}" oninput="document.getElementById('{{ id }}-label').innerHTML = this.value">
                     <br><br>
                     {% endif %}
                     {% endfor %}
@@ -99,8 +104,9 @@
             </div>
         </div>
 
-        <div id="Settings" class="tab" style="display:none">
+        <div id="Settings" class="tab" style="display: none">
             <h2>Settings</h2>
+            <p><a href='/pwd_reset'>Password reset</a></p>
         </div>
     </body>
 </html>

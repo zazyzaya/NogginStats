@@ -1,0 +1,50 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="static/login.css">
+        <script src="static/runner.js"></script>
+        <link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
+    </head>
+    <body>
+    <div class="main">
+        <h1>NogginStats</h1>
+        <h3>Password Reset</h3>
+
+        <h5 id="reset-failed" class="w3-red"></h5>
+
+        <div id="pwd-reset">
+            <label for="old_pwd">
+                Old Password:
+            </label>
+            <input type="password" id="old_pwd" name="old_pwd" class="pwd_reset_input"
+                placeholder="Enter your old password" required>
+
+            <label for="password">
+                New Password:
+            </label>
+            <input type="password" id="password" name="password" class="pwd_reset_input"
+                placeholder="Enter your Password" required>
+
+            <label for="password2">
+                Repeat Password:
+            </label>
+            <input type="password" id="password2" name="password2" class="pwd_reset_input"
+                placeholder="Enter your Password Again" required>
+
+            <div style="height: 10px"></div>
+            <div class="wrap">
+                <button type="submit" class="w3-button w3-green" onclick="pwd_reset()">
+                    Submit
+                </button>
+            </div>
+            <div style="height: 5px"></div>
+            <div class="wrap">
+                <a href="/" style="width: 100%;">
+                <button type="button" id="cancel-pwd-reset" class="w3-button w3-red">
+                    Cancel
+                </button>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
