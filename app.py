@@ -15,6 +15,9 @@ import cryptpandas as crp
 from utils import *
 from secret import secret
 
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 # TODO get from env variable 
 '''
 dbx = dropbox.Dropbox(
