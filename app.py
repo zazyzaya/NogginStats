@@ -7,35 +7,21 @@ from random import random
 import dropbox 
 import dash
 from dash import html
-from dash import dcc
-from flask import Flask, render_template, session, request, url_for, redirect
-import plotly.express as px
+from flask import Flask, render_template, session, request, url_for, redirect, jsonify, make_response
+
 import pandas as pd 
 import cryptpandas as crp
 
+from utils import *
 from secret import secret
 
-# Annoyingly, python hashes are inconsistant
-import hashlib
-from operator import xor
-from struct import unpack
-
-def stable_hash(a_string):
-    sha256 = hashlib.sha256()
-    sha256.update(bytes(a_string, "UTF-8"))
-    digest = sha256.digest()
-    h = 0
-    #
-    for index in range(0, len(digest) >> 3):
-        index8 = index << 3
-        bytes8 = digest[index8 : index8 + 8]
-        i = unpack('q', bytes8)[0]
-        h = xor(h, i)
-    #
-    return h
 
 # TODO get from env variable 
-dbx = dropbox.Dropbox(secret['db-token'])
+dbx = dropbox.Dropbox(
+    oauth2_refresh_token=secret['refresh-token'],
+    app_key=secret['db-key'],
+    app_secret=secret['db-secret']
+)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET', 'dev_server')
@@ -86,12 +72,13 @@ crp.to_encrypted(test_df, pwd, f'{TEST_USR}.crypt')
 '''
 
 today = lambda : dt.datetime.today().strftime('%Y-%m-%d')
+make_pwd = lambda usr,pwd: str(stable_hash(usr + pwd))
 
-def preload_journal(): 
+def preload_journal(day):
     preload = dict()
     
-    df = pd.DataFrame(session['df'])
-    todays_log = (df['stat-date'] == today()).to_numpy().nonzero()[0]
+    df = pd.DataFrame(session['df'], columns=col_order)
+    todays_log = (df['stat-date'] == day).to_numpy().nonzero()[0]
 
     if todays_log.shape[0] == 0: 
         for _,k,b in STATS: 
@@ -102,25 +89,32 @@ def preload_journal():
                 preload[f'{k}-range'] = 5
     else: 
         preload = df.iloc[todays_log.item()].to_dict()
-        print(preload)
 
     return preload
 
 
-def get_index_kwargs(): 
+def get_index_kwargs(day=None): 
+    if day is None: 
+        day = today()
+
+    df = session['df']
+    df = pd.DataFrame(df)
+    df = df.sort_values(by='stat-date', ascending=False)
+    session['df'] = df.to_dict(orient='records')
+
     return {
         'stats': STATS, 
         'records': session['df'], 
         'today': today(),
-        'journal_content': preload_journal(),
-        'range_fig': build_range_fig(pd.DataFrame(session['df'])).to_html(
+        'journal_content': preload_journal(day),
+        'range_fig': build_range_fig(pd.DataFrame(session['df'], columns=col_order)).to_html(
             full_html=False,
             include_plotlyjs='cdn',
             config={'displayModeBar': False},
             default_width='100%',
             default_height='100%'
         ),
-        'cat_fig': build_catagorical(pd.DataFrame(session['df'])).to_html(
+        'cat_fig': build_catagorical(pd.DataFrame(session['df'], columns=col_order)).to_html(
             full_html=False,
             include_plotlyjs='cdn',
             config={'displayModeBar': False},
@@ -132,8 +126,6 @@ def get_index_kwargs():
 
 @app.route('/submit', methods=['POST'])
 def submit(): 
-    print(json.dumps(request.json, indent=1))
-    
     df = pd.DataFrame(session['df'], columns=col_order)
     row = request.json
     todays_log = (df['stat-date'] == row['stat-date']).to_numpy().nonzero()[0]
@@ -147,34 +139,84 @@ def submit():
     else: 
         df = pd.concat([pd.DataFrame([row]), df])
 
-    # Write local
-    crp.to_encrypted(df, session['usr_token'], f'{session["username"]}.crypt')
-
     # Update in-memory df 
     session['df'] = df.to_dict(orient='records')
 
-    # TODO write to cloud
+    # Save
+    fname = f'{session["username"]}.crypt'
+    crp.to_encrypted(df, session['usr_token'], fname)
+    with open(fname, 'rb') as f:
+        content = f.read()
+        dbx.files_upload(content, f'/NogginStats/{fname}', dropbox.files.WriteMode.overwrite)
+    
+
+    return redirect(request.url)
+
+@app.route("/repop", methods=['POST'])
+def repop(): 
+    date = request.json['stat-date']
+    return make_response(jsonify(preload_journal(date)), 200)
+
+@app.route('/create_acct')
+def create_page(): 
+    return app.send_static_file('create_acct.html')
+
+@app.route('/register', methods=['POST'])
+def register_acct(): 
+    usr = request.json['username']
+    pwd = request.json['password']
+    pwd2 = request.json['password2']
+    acc = request.json['access-code']
+
+    if acc.lower() != secret['access-code']: 
+        return 'Wrong access code'
+    elif pwd != pwd2: 
+        return "Passwords don't match"
+    else: 
+        ret = dbx.files_list_folder('/NogginStats')
+        fnames = [r.name for r in ret.entries]
+        if usr in fnames: 
+            return "Username taken"
+    
+    # Create empty entry for new user
+    fname = f'{usr}.crypt'
+    df = pd.DataFrame(columns=col_order)
+    crp.to_encrypted(df, make_pwd(usr,pwd), fname)
+    
+    with open(fname, 'rb') as f:
+        content = f.read()
+        dbx.files_upload(content, f'/NogginStats/{fname}', dropbox.files.WriteMode.overwrite)
+
+    session['username'] = usr 
+    session['df'] = df.to_dict(orient='records')
+    session['usr_token'] = make_pwd(usr, pwd)
 
     return redirect(url_for('index'))
 
 
-@app.route('/authorized', methods=['POST'])
+@app.route('/authorize', methods=['POST'])
 def login(): 
-    usr = request.form['first']
-    pwd = request.form['password']
+    usr = request.json['first']
+    pwd = request.json['password']
     
     session['username'] = usr 
-    session['usr_token'] = str(stable_hash(usr + pwd))
+    session['usr_token'] = make_pwd(usr, pwd)
+
+    fname = f'{session["username"]}.crypt'
+    
+    # Pull from cloud if not local 
+    if not os.path.exists(fname): 
+        try: 
+            dbx.files_download_to_file(fname, f'/NogginStats/{fname}')
+        except dropbox.exceptions.ApiError:
+            return 'Account does not exist'
 
     try: 
-        print("Correct pwd")
-        df = crp.read_encrypted(f'{session["username"]}.crypt', session['usr_token'])
+        df = crp.read_encrypted(fname, session['usr_token'])
     except cryptography.fernet.InvalidToken: 
-        print("Wrong pwd")
-        return render_template('login.html', failed_reason='Incorrect old password')
+        return 'Incorrect password'
 
     session['df'] = df.to_dict(orient='records')
-
     return redirect(url_for('index'))
 
 
@@ -186,18 +228,22 @@ def reset_pwd_submit():
     if new_pwd != request.json['password2']: 
         return "Passwords don't match"
 
-    pwd = str(stable_hash(session['username'] + old_pwd))
+    pwd = make_pwd(session['username'], old_pwd)
     
     try: 
         crp.read_encrypted(f'{session["username"]}.crypt', pwd)
     except cryptography.fernet.InvalidToken: 
         return 'Incorrect old password'
 
-    pwd = str(stable_hash(session['username'] + new_pwd))
+    pwd = make_pwd(session['username'], new_pwd)
     session['usr_token'] = pwd 
     df = pd.DataFrame(session['df'])
-    crp.to_encrypted(df, pwd, f'{session["username"]}.crypt')
-    # TODO Reupload to cloud 
+    
+    fname = f'{session["username"]}.crypt'
+    crp.to_encrypted(df, pwd, fname)
+    with open(fname, 'rb') as f:
+        content = f.read()
+        dbx.files_upload(content, f'/NogginStats/{fname}', dropbox.files.WriteMode.overwrite)
 
     return redirect(url_for('index'))
 
@@ -209,10 +255,8 @@ def pwd_reset_screen():
 
 @app.route('/')
 def index():
-    #session.clear()
     #session['df'] = records
     #return render_template('index.html', **get_index_kwargs())
-    print("routed to index")
     if session.get('usr_token'):
         try: 
             df = crp.read_encrypted(f'{session["username"]}.crypt', session['usr_token'])
@@ -225,80 +269,9 @@ def index():
         return render_template('login.html')
 
 
-def build_catagorical(orig_df): 
-    cols = [c for c in orig_df.columns if 'checked' in c] 
-    df = orig_df[cols + ['stat-date']]
-    df = df.replace({True: 1, False: -1})
-    col_names =  [c.replace('-checked', '').capitalize() for c in df.columns]
-
-    rolling_avgs = df[cols].rolling(window=5, min_periods=1).mean()
-    rolling_avgs['stat-date'] = orig_df['stat-date']
-    rolling_avgs.columns = col_names
-
-    heatmap_df = rolling_avgs.set_index('Stat-date').sort_index()
-
-    # If the index is datetime or something else, convert to string for nicer axis ticks
-    heatmap_df.index = heatmap_df.index.astype(str)
-    heatmap_df_T = heatmap_df.T
-
-    fig = px.imshow(
-        heatmap_df_T,
-        color_continuous_scale=['red', 'white', 'green'],
-        aspect='auto',
-        labels=dict(color='Smoothed Score'),
-        x=heatmap_df_T.columns,  # Dates on x-axis
-        y=heatmap_df_T.index,    # Metrics on y-axis
-        title='Daily Checkins (Rolling average)'
-    )
-
-    fig.update_layout(
-        xaxis_title='Date',
-        xaxis=dict(tickmode='array', tickvals=heatmap_df_T.columns),
-        coloraxis_showscale=False,
-        width=None,
-        height=None,
-        margin_pad=10,
-        plot_bgcolor='rgba(0, 0, 0, 0)'
-    )
-
-    return fig 
-
-
-def build_range_fig(df): 
-    range_fig = px.line(
-        df, x='stat-date', y=['depression-range', 'anxiety-range'], 
-        labels={
-            'variable': 'Mood Metric',  
-            'value': 'Score',           
-            'stat-date': 'Date',
-        }
-    )
-
-    range_fig.for_each_trace(lambda trace: (
-        trace.update(name={
-            'depression-range': 'Depression',
-            'anxiety-range': 'Anxiety'
-        }[trace.name]),
-        trace.update(hovertemplate=f"<b>{trace.name}</b><br>Date: %{{x}}<br>Score: %{{y}}<extra></extra>")
-    ))
-
-    range_fig.update_layout(
-        legend=dict(
-            orientation="h",     # horizontal
-            yanchor="bottom",
-            y=1.02,
-            xanchor="center",
-            x=0.5
-        ),
-        width=None,
-        height=None
-    )
-
-    return range_fig
-
-
 dash_app = dash.Dash(server=app, url_base_pathname="/dash/")
 dash_app.layout = html.Div([])
 
+FIRST = True
 if __name__ == '__main__': 
     app.run(debug=True)

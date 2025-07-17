@@ -1,9 +1,10 @@
 import dropbox 
-from secret import secret 
-dbx = dropbox.Dropbox(secret['db-token'])
+from secret import secret
 
-f = open('test_file.txt', 'rb')  
-meta = dbx.files_upload(f.read(), '/NogginStats/test.txt', mode=dropbox.files.WriteMode("overwrite"))
+dbx = dropbox.Dropbox(
+    oauth2_refresh_token=secret['refresh-token'],
+    app_key=secret['db-key'],
+    app_secret=secret['db-secret']
+)
 
-meta, res = dbx.files_download('/NogginStats/test.txt')
-print(res.content)
+dbx.files_download_to_file('/NogginStats/test.txt')

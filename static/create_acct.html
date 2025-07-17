@@ -1,0 +1,47 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="static/login.css">
+        <script src="static/runner.js"></script>
+        <link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
+    </head>
+    <body>
+    <div class="main">
+        <h1>NogginStats</h1>
+        <h3>Register New Account</h3>
+        <h5 id="register-failed" class="w3-red"></h5>
+
+        <div>
+            <label for="username">
+                Username:
+            </label>
+            <input type="text" id="username" name="first" class="create-input"
+                placeholder="Enter your Username" required>
+
+            <label for="password">
+                Password:
+            </label>
+            <input type="password" id="password" name="password" class="create-input"
+                placeholder="Enter your Password" required>
+
+            <label for="password2">
+                Repeat Password:
+            </label>
+            <input type="password" id="password2" name="password2" class="create-input"
+                placeholder="Enter your Password" required>
+
+            <label for="access-code">
+                Access Code:
+            </label>
+            <input type="text" id="access-code" name="first" class="create-input"
+                placeholder="Enter the access code Isaiah gave you" required>
+            
+            <div style="height: 10px"></div>
+            <div class="wrap">
+                <button type="submit" onclick="register()">
+                    Submit
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

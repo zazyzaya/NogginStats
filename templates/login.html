@@ -2,31 +2,42 @@
     <head>
         <link rel="stylesheet" href="static/login.css">
         <script src="static/runner.js"></script>
+        <script src="static/login_listeners.js"></script>
+        <link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
     </head>
     <body>
     <div class="main">
         <h1>NogginStats</h1>
         <h3>Enter your login credentials</h3>
+        <div>
+            <a href="/create_acct">Create Account</a>
+        </div>
 
-        <form method="post" action="{{ url_for('login') }}">
+        <h5 id="login-failed" class="w3-red"></h5>
+
+        <div>
             <label for="first">
                 Username:
             </label>
-            <input type="text" id="first" name="first" 
+            <input type="text" id="first" name="first" class="login-input"
                 placeholder="Enter your Username" required>
 
             <label for="password">
                 Password:
             </label>
-            <input type="password" id="password" name="password" 
+            <input type="password" id="password" name="password" class="login-input"
                 placeholder="Enter your Password" required>
 
+            <div style="height: 10px"></div>
             <div class="wrap">
-                <button type="submit">
+                <button type="submit" onclick="login()">
                     Submit
                 </button>
             </div>
-        </form>
+        </div>
     </div>
+    <script>
+        
+    </script>
 </body>
 </html>

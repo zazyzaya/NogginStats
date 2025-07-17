@@ -17,7 +17,7 @@
         <div id="Submit" class="tab">
             <div id="stats-box-container">
                 <div id="stats-box">
-                    <input id="stat-date" class="stat-input" type="date" value="{{ today }}">
+                    <input id="stat-date" class="stat-input" type="date" value="{{ today }}" onchange="request_repop()">
                     {% for title, id, has_comment in stats %}
                     {%- if has_comment -%}
                     {%- if journal_content[id+'-checked'] -%}
