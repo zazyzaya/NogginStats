@@ -15,18 +15,23 @@ import cryptpandas as crp
 from utils import *
 from secret import secret
 
-TESTING = True 
-
 # TODO get from env variable 
+'''
 dbx = dropbox.Dropbox(
-    oauth2_refresh_token=secret['refresh-token'],
-    app_key=secret['db-key'],
-    app_secret=secret['db-secret']
+    oauth2_refresh_token=secret['dbx-refresh-token'],
+    app_key=secret['dxb-key'],
+    app_secret=secret['dxb-secret']
+)
+'''
+
+dbx = dropbox.Dropbox(
+    oauth2_refresh_token=os.environ.get("DBX_REFRESH_TOKEN"),
+    app_key=os.environ.get('DBX_KEY'),
+    app_secret=os.environ.get('DBX_SECRET')
 )
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET', 'dev_server')
-app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 STATS = [
     ("Overall feeling \u2014 Depression", 'depression', False),
@@ -132,9 +137,8 @@ def submit():
         fname = f'{session["username"]}.crypt'
         crp.to_encrypted(df, session['usr_token'], fname)
         with open(fname, 'rb') as f:
-            content = f.read()
-            if not TESTING:
-                dbx.files_upload(content, f'/NogginStats/{fname}', dropbox.files.WriteMode.overwrite)
+            content = f.read()    
+            dbx.files_upload(content, f'/NogginStats/{fname}', dropbox.files.WriteMode.overwrite)
 
     return redirect(request.url)
 
@@ -154,12 +158,12 @@ def logout():
 
 @app.route('/register', methods=['POST'])
 def register_acct(): 
-    usr = request.json['username']
+    usr = request.json['username'].lower()
     pwd = request.json['password']
     pwd2 = request.json['password2']
     acc = request.json['access-code']
 
-    if acc.lower() != secret['access-code']: 
+    if acc.lower() != os.environ.get('ACCESS_CODE'): 
         return 'Wrong access code'
     elif pwd != pwd2: 
         return "Passwords don't match"
@@ -187,7 +191,7 @@ def register_acct():
 
 @app.route('/authorize', methods=['POST'])
 def login(): 
-    usr = request.json['first']
+    usr = request.json['first'].lower()
     pwd = request.json['password']
     
     session['username'] = usr 
@@ -263,7 +267,3 @@ def index():
 
 dash_app = dash.Dash(server=app, url_base_pathname="/dash/")
 dash_app.layout = html.Div([])
-
-FIRST = True
-if __name__ == '__main__': 
-    app.run(debug=True)
