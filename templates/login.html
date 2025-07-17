@@ -5,7 +5,10 @@
         <script src="static/login_listeners.js"></script>
         <link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
     </head>
-    <body>
+    <body onload="stopSpin();">
+    <div id="spinner" style="display: none">
+        <img src="static/spinner.svg">
+    </div>
     <div class="main">
         <h1>NogginStats</h1>
         <h3>Enter your login credentials</h3>

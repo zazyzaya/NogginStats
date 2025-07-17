@@ -7,12 +7,16 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     </head>
     <body onload="revertToTab()">
+        <div id="spinner" style="display: none">
+            <img src="static/spinner.svg">
+        </div>
+
         <div class="w3-bar w3-green" style="font-size: x-large; text-align: center;">NogginStats</div>
         <div class="w3-bar w3-black">
-            <button id="Submit-tab" class="w3-bar-item w3-button tablink" onclick="openTab(event, 'Submit')">Submit</button>
+            <button id="Submit-tab" class="w3-bar-item w3-button tablink w3-green" onclick="openTab(event, 'Submit')">Submit</button>
             <button id="Journal-tab" class="w3-bar-item w3-button tablink" onclick="openTab(event, 'Journal')">Journal</button>
             <button id="Graphs-tab" class="w3-bar-item w3-button tablink" onclick="openTab(event, 'Graphs')">Graphs</button>
-            <button id="Settings-tab" class="w3-bar-item w3-button tablink w3-green" onclick="openTab(event, 'Settings')">Settings</button>
+            <button id="Settings-tab" class="w3-bar-item w3-button tablink" onclick="openTab(event, 'Settings')">Settings</button>
         </div>
         <div id="Submit" class="tab">
             <div id="stats-box-container">
@@ -29,7 +33,7 @@
                     <input id="{{ id }}-checked" type="checkbox" class="stat-bool stat-input" {{is_checked}}>
                     </span>
                     <h5>Notes:</h5>
-                    <textarea id="{{ id }}-txt" class="stat-notes stat-input">{{ journal_content[id+'-txt'] }}</textarea>
+                    <textarea id="{{ id }}-txt" class="stat-notes stat-input">{{ journal_content[id+'-txt'] | safe }}</textarea>
                     <br><br>
                     {% else %}
                     <h4>{{ title }}</h4>
@@ -91,9 +95,15 @@
                 </div>
                 {% endfor %}
             </div>
+            {%- if not records -%}
+            <div style="height: 80%; width: 100%; display: flex; align-items: center; justify-content: center">
+            <h4 style="color: #4CAF50">No journal entries yet!</h4>
+            </div>
+            {%- endif -%}
         </div>
 
         <div id="Graphs" class="tab" style="display: none">
+            {%- if records -%}
             <div id="graph-container">
                 <div id="range-chart" class="graph">
                     {{ range_fig | safe }}
@@ -102,11 +112,19 @@
                     {{ cat_fig | safe }}
                 </div>
             </div>
+            {%- else -%}
+            <div style="height: 80%; width: 100%; display: flex; align-items: center; justify-content: center">
+            <h4 style="color: #4CAF50">No data yet!</h4>
+            </div>
+            {%- endif -%}
         </div>
 
         <div id="Settings" class="tab" style="display: none">
             <h2>Settings</h2>
-            <p><a href='/pwd_reset'>Password reset</a></p>
+            <ul>
+                <li><p><a href='/pwd_reset'>Password reset</a></p></li>
+                <li><p><a href='/log_out' onclick="sessionStorage.clear()">Log out</a></p></li>
+            </ul>
         </div>
     </body>
 </html>

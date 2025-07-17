@@ -32,8 +32,8 @@ function revertToTab() {
   
   let last_tab = sessionStorage.getItem('last_tab'); 
   if (last_tab == null) {
-    last_tab = 'Submit-tab'; 
-    sessionStorage.setItem('last_tab', 'Submit-tab'); 
+    last_tab = 'Submit'; 
+    sessionStorage.setItem('last_tab', 'Submit'); 
   }
 
   document.getElementById(last_tab).style.display = "block";
@@ -55,7 +55,28 @@ function revertToTab() {
     }, 50); // delay allows browser to paint the new layout
 }
 
+function toggleSpinner() {
+    let elm = document.getElementById('spinner'); 
+    if (elm.style.display == 'none') {
+        elm.style.display = 'flex'; 
+    } else {
+        elm.style.display = 'none';
+    }
+}
+
+function spin() {
+  let elm = document.getElementById('spinner'); 
+  elm.style.display = 'flex'; 
+}
+
+function stopSpin() {
+  let elm = document.getElementById('spinner'); 
+  elm.style.display = 'none'; 
+}
+
 function submit() {
+    spin(); 
+
     let elms = Array.from(document.getElementsByClassName('stat-input'))
     let ret = {}; 
 
@@ -74,16 +95,22 @@ function submit() {
         }
     });
   
+    let cur_date = document.getElementById('stat-date').value; 
+    sessionStorage.setItem('cached_journal', cur_date); 
+
     fetch('/submit', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(ret)
-    }).then( () => { location.reload(); });
+    })
+    .then( () => { stopSpin(); location.reload() }); 
 }
 
 function register() {
+    spin(); 
+
     let elms = Array.from(document.getElementsByClassName('create-input'));
     let ret = {}; 
 
@@ -102,16 +129,21 @@ function register() {
     }).then(response => {
         if (response.redirected) {
             // On success, follow the redirect
+            stopSpin(); 
             window.location.href = response.url;
         } else {
             response.text().then(text => {
                 document.getElementById('register-failed').innerHTML = text;
             });
         }
-    })
+    }).finally(
+      () => { stopSpin(); }
+    );
 }
 
 function login() {
+    spin(); 
+
     let elms = Array.from(document.getElementsByClassName('login-input'));
     let ret = {}; 
 
@@ -130,16 +162,20 @@ function login() {
     }).then(response => {
         if (response.redirected) {
             // On success, follow the redirect
+            stopSpin(); 
             window.location.href = response.url;
         } else {
             response.text().then(text => {
                 document.getElementById('login-failed').innerHTML = text;
             });
         }
-    })
+    }).finally(
+      () => { stopSpin(); }
+    )
 }
 
 function pwd_reset() {
+  spin(); 
   let elms = Array.from(document.getElementsByClassName('pwd_reset_input'));
   let ret = {}; 
 
@@ -158,13 +194,16 @@ function pwd_reset() {
   }).then(response => {
     if (response.redirected) {
         // On success, follow the redirect
+        stopSpin();
         window.location.href = response.url;
     } else {
-        response.text().then(text => {
-              document.getElementById('reset-failed').innerHTML = text;
-          });
+      response.text().then(text => {
+        document.getElementById('reset-failed').innerHTML = text;
+      });
     }
-  })
+  }).finally(
+    () => { stopSpin(); }
+  )
 }
 
 function reveal(elm_id) {
@@ -179,18 +218,20 @@ function reveal(elm_id) {
     }
 }
 
-function request_repop() {
-  let el = document.getElementById('stat-date'); 
+function request_repop(val) {
+  spin(); 
+  if (!val) {
+    val = document.getElementById('stat-date').value; 
+  }
   
   fetch('/repop', {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json'
     },
-    body: JSON.stringify({'stat-date': el.value})
+    body: JSON.stringify({'stat-date': val})
   }).then( resp => resp.json() )
     .then( result => {
-      console.log(result);
       for (const key in result) {
         el = document.getElementById(key); 
         
@@ -203,7 +244,8 @@ function request_repop() {
           }
         }
       }
-    }); 
+    })
+    .finally(() => { toggleSpinner(); });
 }
 
 // Freeze width 
@@ -251,3 +293,12 @@ function pwdResetListeners() {
 document.addEventListener("DOMContentLoaded", loginListeners);
 document.addEventListener("DOMContentLoaded", pwdResetListeners);
 document.addEventListener("DOMContentLoaded", createAcctListeners);
+
+// After page reloads on submit, dont reset the date 
+document.addEventListener('DOMContentLoaded', () => {
+  let date = sessionStorage.getItem('cached_journal')
+  if (date != 'null') {
+    sessionStorage.setItem('cached_journal', null)
+    request_repop(date); 
+  }
+});

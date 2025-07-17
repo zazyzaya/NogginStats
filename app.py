@@ -15,6 +15,7 @@ import cryptpandas as crp
 from utils import *
 from secret import secret
 
+TESTING = True 
 
 # TODO get from env variable 
 dbx = dropbox.Dropbox(
@@ -46,31 +47,6 @@ for _,k,b in STATS:
     else: 
         col_order.append(f'{k}-range')
 
-'''
-test_data = []
-for i in range(10): 
-    datum = dict()
-    d = dt.datetime.today() + dt.timedelta(days=(-(i+1)))
-    datum['stat-date'] = d.strftime('%Y-%m-%d')
-    for _,k,b in STATS: 
-        if b: 
-            datum[f'{k}-checked'] = random() > 0.5 
-            datum[f'{k}-txt'] = f'Test text for {k}'
-        else: 
-            datum[f'{k}-range'] = int((random() * 10) + 1)
-    test_data.append(datum)
-
-test_df = pd.DataFrame(test_data)
-test_df = test_df.sort_values(by='stat-date', ascending=False)
-records = test_df.to_dict(orient='records')
-
-TEST_USR = 'admin'
-TEST_PWD = 'admin'
-pwd = str(stable_hash(TEST_USR + TEST_PWD))
-print('password:', pwd)
-crp.to_encrypted(test_df, pwd, f'{TEST_USR}.crypt')
-'''
-
 today = lambda : dt.datetime.today().strftime('%Y-%m-%d')
 make_pwd = lambda usr,pwd: str(stable_hash(usr + pwd))
 
@@ -98,8 +74,9 @@ def get_index_kwargs(day=None):
         day = today()
 
     df = session['df']
-    df = pd.DataFrame(df)
+    df = pd.DataFrame(df, columns=col_order)
     df = df.sort_values(by='stat-date', ascending=False)
+
     session['df'] = df.to_dict(orient='records')
 
     return {
@@ -129,26 +106,35 @@ def submit():
     df = pd.DataFrame(session['df'], columns=col_order)
     row = request.json
     todays_log = (df['stat-date'] == row['stat-date']).to_numpy().nonzero()[0]
+    
+    refresh_cloud = False 
+    new_row = pd.DataFrame([row])
 
     # Overwrite existing
     if todays_log.shape[0]: 
         idx = todays_log.item()
-        df.loc[idx,row.keys()] = row.values()
+        new_row = pd.DataFrame([row])
+        
+        if (df.iloc[idx] != new_row).any(axis=1).item(): 
+            df = pd.concat([new_row, df])
+            refresh_cloud = True 
 
     # Create new
     else: 
-        df = pd.concat([pd.DataFrame([row]), df])
+        df = pd.concat([new_row, df])
+        refresh_cloud = True 
 
-    # Update in-memory df 
-    session['df'] = df.to_dict(orient='records')
+    if refresh_cloud: 
+        # Update in-memory df 
+        session['df'] = df.to_dict(orient='records')
 
-    # Save
-    fname = f'{session["username"]}.crypt'
-    crp.to_encrypted(df, session['usr_token'], fname)
-    with open(fname, 'rb') as f:
-        content = f.read()
-        dbx.files_upload(content, f'/NogginStats/{fname}', dropbox.files.WriteMode.overwrite)
-    
+        # Save
+        fname = f'{session["username"]}.crypt'
+        crp.to_encrypted(df, session['usr_token'], fname)
+        with open(fname, 'rb') as f:
+            content = f.read()
+            if not TESTING:
+                dbx.files_upload(content, f'/NogginStats/{fname}', dropbox.files.WriteMode.overwrite)
 
     return redirect(request.url)
 
@@ -160,6 +146,11 @@ def repop():
 @app.route('/create_acct')
 def create_page(): 
     return app.send_static_file('create_acct.html')
+
+@app.route('/log_out')
+def logout(): 
+    session.clear() 
+    return redirect(url_for('index'))
 
 @app.route('/register', methods=['POST'])
 def register_acct(): 
@@ -255,12 +246,13 @@ def pwd_reset_screen():
 
 @app.route('/')
 def index():
+    #session.clear()
     #session['df'] = records
     #return render_template('index.html', **get_index_kwargs())
     if session.get('usr_token'):
         try: 
             df = crp.read_encrypted(f'{session["username"]}.crypt', session['usr_token'])
-        except cryptography.fernet.InvalidToken: 
+        except (cryptography.fernet.InvalidToken, FileNotFoundError): 
             return render_template('login.html', failed_reason='Incorrect old password')
 
         session['df'] = df.to_dict(orient='records')
