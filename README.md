@@ -1,1 +1,1 @@
-# [www.nogginstats.isaiahjking.com](www.nogginstats.isaiahjking.com)
+# [www.nogginstats.isaiahjking.com](https://nogginstats.isaiahjking.com/)
