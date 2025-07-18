@@ -27,12 +27,6 @@ dbx = dropbox.Dropbox(
 )
 '''
 
-dbx = dropbox.Dropbox(
-    oauth2_refresh_token=os.environ.get("DBX_REFRESH_TOKEN"),
-    app_key=os.environ.get('DBX_KEY'),
-    app_secret=os.environ.get('DBX_SECRET')
-)
-
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET', 'dev_server')
 
@@ -270,3 +264,10 @@ def index():
 
 dash_app = dash.Dash(server=app, url_base_pathname="/dash/")
 dash_app.layout = html.Div([])
+
+if __name__ == '__main__': 
+    dbx = dropbox.Dropbox(
+        oauth2_refresh_token=os.environ.get("DBX_REFRESH_TOKEN"),
+        app_key=os.environ.get('DBX_KEY'),
+        app_secret=os.environ.get('DBX_SECRET')
+    )
