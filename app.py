@@ -17,7 +17,7 @@ from utils import *
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
-dropbox.Dropbox(
+dbx = dropbox.Dropbox(
     oauth2_refresh_token=os.environ.get("DBX_REFRESH_TOKEN"),
     app_key=os.environ.get('DBX_KEY'),
     app_secret=os.environ.get('DBX_SECRET')
