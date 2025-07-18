@@ -1,3 +1,4 @@
+gunicorn==23.0.0
 cryptography==45.0.5
 CryptPandas==1.0.1
 dash==3.1.1
