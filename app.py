@@ -13,7 +13,6 @@ import pandas as pd
 import cryptpandas as crp
 
 from utils import *
-from secret import secret
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
