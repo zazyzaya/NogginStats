@@ -4,7 +4,7 @@ import os
 import json 
 from random import random 
 
-import dropbox 
+import dropbox
 import dash
 from dash import html
 from flask import Flask, render_template, session, request, url_for, redirect, jsonify, make_response
@@ -16,6 +16,12 @@ from utils import *
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
+
+dropbox.Dropbox(
+    oauth2_refresh_token=os.environ.get("DBX_REFRESH_TOKEN"),
+    app_key=os.environ.get('DBX_KEY'),
+    app_secret=os.environ.get('DBX_SECRET')
+)
 
 # TODO get from env variable 
 '''
@@ -263,10 +269,3 @@ def index():
 
 dash_app = dash.Dash(server=app, url_base_pathname="/dash/")
 dash_app.layout = html.Div([])
-
-if __name__ == '__main__': 
-    dbx = dropbox.Dropbox(
-        oauth2_refresh_token=os.environ.get("DBX_REFRESH_TOKEN"),
-        app_key=os.environ.get('DBX_KEY'),
-        app_secret=os.environ.get('DBX_SECRET')
-    )
